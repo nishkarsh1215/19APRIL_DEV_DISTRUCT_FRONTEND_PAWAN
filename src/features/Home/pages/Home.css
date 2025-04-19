@@ -1,0 +1,27 @@
+.box {
+  display: flex; /* Enable flexbox */
+  align-items: center; /* Vertically center */
+  justify-content: center; /* Horizontally center */
+  text-align: center; /* Center-align text if it wraps */
+  height: 100px; /* Set a height for the box */
+  width: 100px; /* Set a width for the box */
+  border: 1px solid #000; /* Optional: Add a border to visualize the box */
+  background-color: #f0f0f0; /* Optional: Add a background color */
+}
+
+@keyframes gradient-animation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-animation 5s ease infinite;
+}
