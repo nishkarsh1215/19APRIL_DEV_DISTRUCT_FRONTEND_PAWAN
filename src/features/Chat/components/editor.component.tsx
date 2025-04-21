@@ -3,11 +3,13 @@ import { useState, useEffect, useRef, FC } from "react";
 import { useParams } from "react-router-dom";
 import {
   SandpackCodeEditor,
-  SandpackFileExplorer,
+  // SandpackFileExplorer,
   SandpackLayout,
   SandpackPreview,
   useSandpack
 } from "@codesandbox/sandpack-react";
+// import { SandpackFileExplorer } from "sandpack-file-explorer";
+import SandpackFileExplorer from "@rainetian/sandpack-file-explorer";
 import { FolderClosed, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -75,6 +77,7 @@ export const CodeEditor: FC = () => {
   const onSave = async () => {
     setIsSaveLoading(true);
     if (!chat_id) return;
+    console.log("Saved Files Data ", sandpack.files);
     setTimeout(() => {
       updateEditorMessage(chat_id, JSON.stringify(sandpack.files))
         .then(() => {
@@ -102,9 +105,9 @@ export const CodeEditor: FC = () => {
                 <FolderClosed />
               </Button>
             </SheetTrigger>
-            <SheetContent className="text-white">
-              <div className="h-full overflow-auto mt-4">
-                <SandpackFileExplorer className="h-full" />
+            <SheetContent className="text-white h-full">
+              <div className="h-[1080px] overflow-hidden mt-4">
+                <SandpackFileExplorer />
               </div>
             </SheetContent>
           </Sheet>
@@ -118,7 +121,7 @@ export const CodeEditor: FC = () => {
             className="hidden sm:block"
           >
             <div className="h-full overflow-auto border-l border-gray-700 relative">
-              <SandpackFileExplorer autoHiddenFiles className="h-full" />
+              <SandpackFileExplorer />
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
