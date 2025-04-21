@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FaGithub, FaGoogle } from "react-icons/fa";
-import { login, register } from "../services";
+import { register } from "../services";
 
 export const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -24,21 +24,26 @@ export const AuthPage = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await login({ email, password });
-      toast({
-        title: "Signin Successful"
+      const res = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        credentials: "include", // Allow cookies
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ email, password })
       });
 
-      setTimeout(() => {
-        if (response.statusText === "OK") {
-          navigate("/");
-        }
-      });
+      if (res.ok) {
+        navigate("/");
+        window.location.reload();
+      }
+
+      const data = await res.json();
+      console.log("signin response", data);
+      toast({ title: "Signin Successful" });
     } catch (error) {
       console.log("Error signing in: ", error);
-      toast({
-        title: "Invalid credentials"
-      });
+      toast({ title: "Invalid credentials" });
     }
   };
 

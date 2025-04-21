@@ -50,6 +50,7 @@ export function AppSidebar() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSignoutLoading, setIsSignoutLoading] = useState(false);
   const width = isExpanded ? "w-64" : "w-16";
   const [chats, setChats] = useState<{ chat_id: string; title: string }[]>([]);
   const navigate = useNavigate();
@@ -77,34 +78,25 @@ export function AppSidebar() {
   };
 
   const handleLogout = async () => {
-    const response = window.confirm("Are you sure you want to log out?");
-    if (response.valueOf()) {
-      try {
-        const logoutResponse = await logout();
-        if (logoutResponse.statusText === "OK")
-          toast({
-            title: "Logged out successfully"
-          });
+    setIsSignoutLoading(true);
+    try {
+      const logoutResponse = await logout();
+      if (logoutResponse.statusText === "OK")
+        toast({
+          title: "Logged out successfully"
+        });
 
-        navigate("/auth", { replace: true });
-      } catch (error) {
-        console.error("Error logging out", error);
-      }
+      navigate("/auth", { replace: true });
+      window.location.reload();
+      toast({
+        title: "Logged out successfully"
+      });
+    } catch (error) {
+      console.error("Error logging out", error);
+    } finally {
+      setIsSignoutLoading(false);
     }
   };
-
-  // const handleRename = async (id: string, oldTitle: string) => {
-  //   const newTitle = window.prompt("Enter new title:", oldTitle) || oldTitle;
-  //   if (newTitle === oldTitle) return;
-  //   try {
-  //     await updateChat(id, newTitle);
-  //     setChats((prev) =>
-  //       prev.map((c) => (c.chat_id === id ? { ...c, title: newTitle } : c))
-  //     );
-  //   } catch (error) {
-  //     console.error("Error renaming chat", error);
-  //   }
-  // };
 
   const onFeedbackSubmit = async () => {
     try {
@@ -133,6 +125,11 @@ export function AppSidebar() {
       <Sidebar className={`h-full ${width}`}>
         <SidebarContent className="h-full bg-gray-100 dark:bg-main-black flex flex-col justify-between">
           <div>
+            {!isExpanded && (
+              <Link to={"/"}>
+                <img src="/logo.png" className="h-10 w-10 mx-auto mt-2" />
+              </Link>
+            )}
             <div className="flex items-center justify-between py-5 pr-5 mx-5">
               {isExpanded && <img src="/logo.png" className="h-10 w-10" />}
               <button
@@ -295,7 +292,12 @@ export function AppSidebar() {
                         className="pb-2 w-full"
                         onClick={handleLogout}
                       >
-                        <LogOut />
+                        {isSignoutLoading ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <LogOut />
+                        )}
+
                         <h2 className=" flex-shrink-0">Sign Out</h2>
                       </Button>
                     </div>
