@@ -26,7 +26,9 @@ import {
 import { Terminal } from "./terminal.component";
 import { toast } from "@/hooks";
 
-export const CodeEditor: FC = () => {
+export const CodeEditor: FC<{ isEditLoading: boolean }> = ({
+  isEditLoading
+}) => {
   const { chat_id } = useParams();
   const [isSaveLoading, setIsSaveLoading] = useState(false);
   const [files, setFiles] = useState<Record<string, any>>({});
@@ -163,7 +165,14 @@ export const CodeEditor: FC = () => {
               <ResizableHandle withHandle />
               <ResizablePanel defaultSize={30} className="overflow-scroll">
                 <div className="h-full overflow-auto">
-                  <Terminal setFiles={setFiles} />
+                  {isEditLoading ? (
+                    <div className="flex items-center justify-center gap-2 h-16">
+                      <span>We are Editing your project. Please Wait!</span>
+                      <Loader2 className="animate-spin h-6 w-6 mr-2" />
+                    </div>
+                  ) : (
+                    <Terminal setFiles={setFiles} />
+                  )}
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>

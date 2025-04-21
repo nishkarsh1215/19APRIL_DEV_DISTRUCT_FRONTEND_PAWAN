@@ -2,7 +2,7 @@ import { useEditorStore } from "@/store/editor.store";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, Download } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 import { CodeEditor, ChatInterface } from "../components";
 import {
@@ -10,13 +10,64 @@ import {
   ResizablePanel,
   ResizableHandle
 } from "@/components/ui/resizable";
-import { SandpackProvider } from "@codesandbox/sandpack-react";
+import { SandpackProvider, useSandpack } from "@codesandbox/sandpack-react";
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { sendCodeMessage } from "@/features/Authentication/services";
 import { Message, MessageContext } from "@/store/message.store";
 import Prompt from "@/constants/Prompt";
 import { FilesContext } from "@/store/file.store";
+
+const DownloadButton = () => {
+  const { sandpack } = useSandpack();
+
+  const handleDownload = async () => {
+    try {
+      // Dynamically import JSZip to avoid bundling it unnecessarily
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+
+      // Get all files from Sandpack
+      const files = sandpack.files;
+
+      // Add each file to the zip
+      Object.entries(files).forEach(([path, { code }]) => {
+        // Remove leading slash if present
+        const filePath = path.startsWith("/") ? path.substring(1) : path;
+        zip.file(filePath, code);
+      });
+
+      // Generate the zip file
+      const content = await zip.generateAsync({ type: "blob" });
+
+      // Create a download link and trigger download
+      const url = URL.createObjectURL(content);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "devdistruct-project.zip";
+      document.body.appendChild(link);
+      link.click();
+
+      // Clean up
+      URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Failed to download project files:", error);
+    }
+  };
+
+  return (
+    <Button
+      onClick={handleDownload}
+      variant="outline"
+      size="sm"
+      className="absolute top-4 right-4 z-10"
+    >
+      <Download className="h-4 w-4 mr-2" />
+      Download Project
+    </Button>
+  );
+};
 
 export const ChatPage = () => {
   // const { isAuthenticated } = useUser();
@@ -25,6 +76,7 @@ export const ChatPage = () => {
   const [inputText, setInputText] = useState("");
 
   const { isFilesLoading, setIsFilesLoading } = useContext(FilesContext);
+  const [isEditLoading, setIsEditLoading] = useState(false);
   const { isEditorOpen } = useEditorStore();
   const { chat_id } = useParams();
   const isSmallScreen = useMediaQuery({ maxWidth: 1024 });
@@ -68,6 +120,7 @@ export const ChatPage = () => {
 
   const generateAiCode = async () => {
     console.log("generate ai code");
+    setIsEditLoading(true);
 
     const PROMPT =
       "PLEASE RETURN THE FULL CODE, DO THE NECESSARY CHANGES AFTER READING THE INPUT BUT PLEASE RETURN THE FULL CODE... EVERYTHING SHOULD BE RETURNED...\n" +
@@ -105,18 +158,143 @@ export const ChatPage = () => {
       // }
       setFiles(JSON.parse(response.data.response));
       // setEditorMessage(newEditorMessage)
+      setIsEditLoading(false);
     } catch (err) {
       console.error("Failed to generate AI code", err);
+      setIsEditLoading(false);
+      generateAiCode();
     } finally {
       setIsFilesLoading(false);
+      setIsEditLoading(false);
     }
   };
 
   if (isLoading)
     return (
-      <h2 className="text-center font-bold flex items-center justify-center h-screen gap-4 text-3xl">
-        <span>Please Wait</span> <Loader2 className="animate-spin h-8 w-8" />
-      </h2>
+      <div className="h-screen flex items-center justify-center flex-col">
+        <motion.div
+          className="relative w-48 h-48 mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          {/* Brain/Circuit SVG */}
+          <svg viewBox="0 0 200 200" className="w-full h-full">
+            {/* Brain shape */}
+            <motion.path
+              d="M100 20C50 20 20 50 20 100C20 150 50 180 100 180C150 180 180 150 180 100C180 50 150 20 100 20Z"
+              fill="none"
+              stroke="#4f46e5"
+              strokeWidth="2"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 1 }}
+              transition={{ duration: 2, repeat: Infinity, repeatType: "loop" }}
+            />
+
+            {/* Neural network connections */}
+            <motion.path
+              d="M40 70H160M50 100H150M40 130H160M70 40V160M100 30V170M130 40V160"
+              stroke="#10b981"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 3, repeat: Infinity }}
+            />
+
+            {/* Circuit nodes */}
+            <motion.path
+              d="M60 60L140 140M60 140L140 60M50 100C70 80 130 120 150 100"
+              stroke="#8b5cf6"
+              strokeWidth="1.5"
+              strokeDasharray="4 2"
+              fill="none"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
+            />
+
+            {/* Neural pulses */}
+            {[40, 60, 80, 100, 120, 140, 160].map((pos, i) => (
+              <motion.circle
+                key={i}
+                cx="100"
+                cy={pos}
+                r="3"
+                fill="#f43f5e"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                  ease: "easeInOut"
+                }}
+              />
+            ))}
+
+            {/* Horizontal pulses */}
+            {[40, 70, 100, 130, 160].map((pos, i) => (
+              <motion.circle
+                key={`h-${i}`}
+                cx={pos}
+                cy="100"
+                r="3"
+                fill="#3b82f6"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [0, 1, 0], opacity: [0, 1, 0] }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  delay: i * 0.15 + 0.5,
+                  ease: "easeInOut"
+                }}
+              />
+            ))}
+          </svg>
+
+          {/* Orbital rings */}
+          <motion.div
+            className="absolute inset-0 rounded-full border-2 border-indigo-500/30"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+          />
+          <motion.div
+            className="absolute inset-4 rounded-full border-2 border-teal-500/30"
+            animate={{ rotate: -360 }}
+            transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          />
+        </motion.div>
+
+        <motion.h2
+          className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-teal-500 mb-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          <motion.span
+            animate={{ opacity: [1, 0.7, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            Neural Processing...
+          </motion.span>
+        </motion.h2>
+
+        <motion.p
+          className="text-xl text-center text-white/80"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
+          <motion.span
+            animate={{ opacity: [0.7, 1, 0.7] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            Dev Distruct is Making it ...
+          </motion.span>
+        </motion.p>
+      </div>
     );
 
   if (!files || Object.keys(files).length === 0) return null; // or a loader
@@ -136,7 +314,8 @@ export const ChatPage = () => {
         {isSmallScreen ? (
           // Mobile & Tablet View: Full width editor with chat in sheet
           <div className="w-full h-full">
-            <CodeEditor />
+            <CodeEditor isEditLoading={isEditLoading} />
+            <DownloadButton />
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -213,7 +392,8 @@ export const ChatPage = () => {
                           exit={{ opacity: 0, x: 300 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <CodeEditor />
+                          <CodeEditor isEditLoading={isEditLoading} />
+                          <DownloadButton />
                         </motion.div>
                       </AnimatePresence>
                     </ResizablePanel>

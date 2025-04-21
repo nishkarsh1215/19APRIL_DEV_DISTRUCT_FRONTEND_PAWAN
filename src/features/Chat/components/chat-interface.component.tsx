@@ -243,6 +243,12 @@ export function ChatInterface({
         ))}
         {/* Add this div at the end of messages */}
         <div ref={messagesEndRef} />
+        {/* {isEditLoading ? (
+          <div className="flex items-center justify-center gap-2 h-16">
+            <span>We are Editing your project. Please Wait!</span>
+            <Loader2 className="animate-spin h-6 w-6 mr-2" />
+          </div>
+        ) : null} */}
       </ScrollArea>
 
       <div className="w-full max-w-3xl mx-auto px-4 mb-4 border border-gray-700 rounded-lg">
