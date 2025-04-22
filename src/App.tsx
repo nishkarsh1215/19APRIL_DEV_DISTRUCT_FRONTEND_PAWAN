@@ -1,36 +1,45 @@
-import { useState, useEffect } from 'react'
-import { SidebarProvider } from './components/ui/sidebar'
-import { Routes, Route, Outlet } from 'react-router-dom'
-import { Toaster } from '@/components/ui/toaster'
-import { AppSidebar } from './features/Home/components'
-import { useThemeStore } from './store'
-import { HomePage, BlogDetailsPage } from './features/Home'
-import { ChatPage } from './features/Chat'
-import { AuthPage } from './features/Authentication'
+import { useState, useEffect } from "react";
+import { SidebarProvider } from "./components/ui/sidebar";
+import { Routes, Route, Outlet } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { AppSidebar } from "./features/Home/components";
+import { useThemeStore } from "./store";
+import {
+  HomePage,
+  BlogDetailsPage,
+  PricingPage,
+  AboutPage,
+  ContactPage,
+  PrivacyPolicyPage,
+  RefundPolicyPage,
+  TermsPage
+} from "./features/Home";
+import { ChatPage } from "./features/Chat";
+import { AuthPage } from "./features/Authentication";
 import {
   ProtectedRoute,
-  AuthRoute,
-} from '@/features/Authentication/routes/protected-routes'
+  AuthRoute
+} from "@/features/Authentication/routes/protected-routes";
 import {
   VerificationEmailSentPage,
-  VerificationMessagePage,
-} from '@/features/Authentication/pages'
-import { Message, MessageContext } from './store/message.store'
-import { FilesContext } from './store/file.store'
-import Header from './features/Home/components/header.component'
-import { useUser } from './hooks'
+  VerificationMessagePage
+} from "@/features/Authentication/pages";
+import { Message, MessageContext } from "./store/message.store";
+import { FilesContext } from "./store/file.store";
+import Header from "./features/Home/components/header.component";
+import { useUser } from "./hooks";
 
 export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const checkIfMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    checkIfMobile()
-    window.addEventListener('resize', checkIfMobile)
-    return () => window.removeEventListener('resize', checkIfMobile)
-  }, [])
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
 
   if (isMobile) {
     return (
@@ -38,7 +47,7 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
         <Toaster />
         <main>{children}</main>
       </div>
-    )
+    );
   }
 
   return (
@@ -49,24 +58,24 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
       </main>
       <Toaster />
     </div>
-  )
+  );
 }
 
 function App() {
-  const { darkMode } = useThemeStore()
-  const { isAuthenticated } = useUser()
-  console.log('isAuthenticated', isAuthenticated)
-  const [messages, setMessages] = useState<Message | null>(null)
-  const [files, setFiles] = useState(null)
-  const [isFilesLoading, setIsFilesLoading] = useState(true)
+  const { darkMode } = useThemeStore();
+  const { isAuthenticated } = useUser();
+  console.log("isAuthenticated", isAuthenticated);
+  const [messages, setMessages] = useState<Message | null>(null);
+  const [files, setFiles] = useState(null);
+  const [isFilesLoading, setIsFilesLoading] = useState(true);
 
   useEffect(() => {
     if (darkMode) {
-      document.documentElement.classList.add('dark')
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.remove("dark");
     }
-  }, [darkMode])
+  }, [darkMode]);
 
   return (
     <FilesContext.Provider
@@ -74,7 +83,7 @@ function App() {
         files: files,
         setFiles: setFiles,
         isFilesLoading: isFilesLoading,
-        setIsFilesLoading: setIsFilesLoading,
+        setIsFilesLoading: setIsFilesLoading
       }}
     >
       <MessageContext.Provider
@@ -102,6 +111,15 @@ function App() {
                     }
                   />
                   <Route path="blog/:blog_id" element={<BlogDetailsPage />} />
+                  <Route path="pricing" element={<PricingPage />} />
+                  <Route path="about-us" element={<AboutPage />} />
+                  <Route path="contact" element={<ContactPage />} />
+                  <Route
+                    path="privacy-policy"
+                    element={<PrivacyPolicyPage />}
+                  />
+                  <Route path="refund-policy" element={<RefundPolicyPage />} />
+                  <Route path="/tnc" element={<TermsPage />} />
                   <Route
                     path="auth"
                     element={
@@ -127,7 +145,7 @@ function App() {
         </SidebarProvider>
       </MessageContext.Provider>
     </FilesContext.Provider>
-  )
+  );
 }
 
-export default App
+export default App;
