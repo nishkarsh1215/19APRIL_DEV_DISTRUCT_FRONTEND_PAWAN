@@ -134,9 +134,13 @@ export function AppSidebar() {
               {isExpanded && <img src="/logo.png" className="h-10 w-10" />}
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-110"
               >
-                <PanelLeft className={`h-5 w-5 ${isExpanded && "-mr-16"}`} />
+                <PanelLeft
+                  className={`h-5 w-5 transition-transform duration-300 ease-in-out ${
+                    isExpanded ? "rotate-180 -mr-16" : ""
+                  }`}
+                />
               </button>
             </div>
 
@@ -144,15 +148,21 @@ export function AppSidebar() {
               <Link to={"/"}>
                 <Button
                   variant={"outline"}
-                  className="w-[calc(100%-1.5rem)] mx-3"
+                  className="w-[calc(100%-1.5rem)] mx-3 transition-all duration-300 hover:bg-primary/10 hover:scale-105"
                 >
-                  New Chat
+                  <span className="flex items-center gap-2">
+                    <Plus className="size-5 transition-transform duration-300 group-hover:rotate-90" />
+                    New Chat
+                  </span>
                 </Button>
               </Link>
             ) : (
               <Link to={"/"}>
-                <Button variant={"outline"} className="size-10 ml-3">
-                  <Plus className=" scale-[1.3]" />
+                <Button
+                  variant={"outline"}
+                  className="size-10 ml-3 transition-all duration-300 hover:scale-110 hover:bg-primary/10 overflow-hidden"
+                >
+                  <Plus className="scale-[1.3] transition-transform duration-300 hover:rotate-90" />
                 </Button>
               </Link>
             )}
@@ -166,13 +176,17 @@ export function AppSidebar() {
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
-                              className={`${
+                              className={`group transition-all duration-300 hover:scale-105 ${
                                 isExpanded &&
                                 "w-[calc(100%-1.5rem)] mx-3 social-button"
                               }`}
                             >
-                              <FaQuestion className="size-6" />
-                              {isExpanded && <span>Feedback</span>}
+                              <FaQuestion className="size-6 transition-transform duration-300 group-hover:rotate-12 group-hover:text-primary" />
+                              {isExpanded && (
+                                <span className="transition-opacity duration-300">
+                                  Feedback
+                                </span>
+                              )}
                             </Button>
                           </DialogTrigger>
                           <DialogContent className="sm:max-w-[425px]">
@@ -209,7 +223,7 @@ export function AppSidebar() {
             </SidebarGroup>
 
             {isExpanded && (
-              <div className=" my-3 mx-3 w-[calc(100%-1.5rem)] border-t border-dashed border-t-gray-300 dark:border-t-gray-700"></div>
+              <div className=" my-3 mx-3 w-[calc(100%-1.5rem)] border-t border-dashed border-t-gray-300 dark:border-t-gray-700" />
             )}
 
             {isExpanded && isAuthenticated && (
@@ -244,11 +258,14 @@ export function AppSidebar() {
                 <PopoverTrigger asChild className="mx-4 mb-4">
                   <div className="cursor-pointer flex items-center gap-4">
                     <Avatar className="">
-                      <AvatarImage
-                        src="https://github.com/shadcn.png"
-                        alt="@shadcn"
-                      />
-                      <AvatarFallback>RI</AvatarFallback>
+                      <AvatarImage src={user.profilePicture} alt={user.name} />
+                      <AvatarFallback>
+                        {user.name
+                          .split(" ")
+                          .map((word: string[]) => word[0])
+                          .join("")
+                          .toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     {isExpanded && (
                       <div className="flex flex-col">
@@ -270,10 +287,16 @@ export function AppSidebar() {
                       <div className="flex items-center gap-4">
                         <Avatar className="h-8 w-8">
                           <AvatarImage
-                            src="https://github.com/shadcn.png"
-                            alt="@shadcn"
+                            src={user.profilePicture}
+                            alt={user.name}
                           />
-                          <AvatarFallback>RI</AvatarFallback>
+                          <AvatarFallback>
+                            {user.name
+                              .split(" ")
+                              .map((word: string[]) => word[0])
+                              .join("")
+                              .toUpperCase()}
+                          </AvatarFallback>
                         </Avatar>
 
                         <div className="flex flex-col">

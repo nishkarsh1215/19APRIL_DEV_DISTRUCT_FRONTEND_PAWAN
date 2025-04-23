@@ -65,7 +65,7 @@ function App() {
   const { darkMode } = useThemeStore();
   const { isAuthenticated } = useUser();
   console.log("isAuthenticated", isAuthenticated);
-  const [messages, setMessages] = useState<Message | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
   const [files, setFiles] = useState(null);
   const [isFilesLoading, setIsFilesLoading] = useState(true);
 
@@ -86,9 +86,7 @@ function App() {
         setIsFilesLoading: setIsFilesLoading
       }}
     >
-      <MessageContext.Provider
-        value={{ message: messages, setMessage: setMessages }}
-      >
+      <MessageContext.Provider value={{ message, setMessage }}>
         <SidebarProvider>
           {/* <CustomCursor
             dotSize={8}

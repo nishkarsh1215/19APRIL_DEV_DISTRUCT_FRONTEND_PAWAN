@@ -14,6 +14,7 @@ import { v4 as uuidv4 } from "uuid";
 import Prompt from "@/constants/Prompt";
 import { EditorMessageContext } from "@/store/editor-message.context";
 import { useUser } from "@/hooks";
+import { MessageContext } from "@/store/message.store";
 
 interface Message2 {
   id: string;
@@ -39,6 +40,7 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const { isAuthenticated } = useUser();
   const [messages, setMessages] = useState<Message2[]>([]);
+  const { message } = useContext(MessageContext);
   const { editorMessage, setEditorMessage } = useContext(EditorMessageContext);
   const [input, setInput] = useState("");
   const [isActive, setIsActive] = useState(false);
@@ -53,7 +55,6 @@ export function ChatInterface({
 
   const { chat_id } = useParams();
 
-  // Replace the previous scrollToBottom function with this one
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -214,7 +215,7 @@ export function ChatInterface({
   return (
     <div className="flex flex-col h-full items-center text-black dark:text-white bg-white dark:bg-dim-black">
       <div className="flex justify-between gap-5 items-center p-4 w-full">
-        <h1 className="font-medium"></h1>
+        <h1 className="font-medium">{message?.prompt}</h1>
         {!isMobile && (
           <Button variant="outline" size="sm" onClick={toggleEditor}>
             <Code2 className="mr-2 h-4 w-4" />
