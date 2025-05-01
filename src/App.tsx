@@ -12,7 +12,8 @@ import {
   ContactPage,
   PrivacyPolicyPage,
   RefundPolicyPage,
-  TermsPage
+  TermsPage,
+  TokenLimitReachedPage
 } from "./features/Home";
 import { ChatPage } from "./features/Chat";
 import { AuthPage } from "./features/Authentication";
@@ -64,7 +65,6 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 function App() {
   const { darkMode } = useThemeStore();
   const { isAuthenticated } = useUser();
-  console.log("isAuthenticated", isAuthenticated);
   const [message, setMessage] = useState<Message | null>(null);
   const [files, setFiles] = useState(null);
   const [isFilesLoading, setIsFilesLoading] = useState(true);
@@ -108,6 +108,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
+                  <Route path="no-tokens" element={<TokenLimitReachedPage />} />
                   <Route path="blog/:blog_id" element={<BlogDetailsPage />} />
                   <Route path="pricing" element={<PricingPage />} />
                   <Route path="about-us" element={<AboutPage />} />

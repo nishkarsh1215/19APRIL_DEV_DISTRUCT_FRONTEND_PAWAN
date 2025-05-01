@@ -1,5 +1,3 @@
-"use client";
-
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import React, { useEffect, useRef, useState } from "react";
@@ -104,19 +102,19 @@ function Pointer({ x, y }: PointerProps): JSX.Element {
       className="pointer-events-none absolute z-50 h-4 w-4 rounded-full"
       style={{
         top: y,
-        left: x,
+        left: x
       }}
       initial={{
         scale: 1,
-        opacity: 1,
+        opacity: 1
       }}
       animate={{
         scale: 1,
-        opacity: 1,
+        opacity: 1
       }}
       exit={{
         scale: 0,
-        opacity: 0,
+        opacity: 0
       }}
     >
       <svg

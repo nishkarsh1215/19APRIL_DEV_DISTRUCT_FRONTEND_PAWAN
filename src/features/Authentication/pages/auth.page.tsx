@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,13 +38,10 @@ export const AuthPage = () => {
         navigate("/");
         window.location.reload();
       }
-
-      const data = await res.json();
-      console.log("signin response", data);
       toast({ title: "Signin Successful" });
-    } catch (error) {
-      console.log("Error signing in: ", error);
+    } catch (error: any) {
       toast({ title: "Invalid credentials" });
+      throw new Error(error);
     }
   };
 
@@ -54,8 +52,8 @@ export const AuthPage = () => {
       toast({
         title: "Signup Successful, Please verify your email"
       });
-    } catch (error) {
-      console.log("Error signing up: ", error);
+    } catch (error: any) {
+      throw new Error(error);
     }
   };
 

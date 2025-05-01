@@ -65,10 +65,6 @@ export function ChatInterface({
   }, [messages]);
 
   useEffect(() => {
-    console.log(input);
-  }, [input]);
-
-  useEffect(() => {
     setIsLoading(true);
     if (chat_id) {
       (async () => {
@@ -118,7 +114,12 @@ export function ChatInterface({
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMessage.id
-            ? { ...msg, response: "Error sending message", isLoading: false }
+            ? {
+                ...msg,
+                response:
+                  "We are bringing the mentioned change. Hang Tight ...",
+                isLoading: false
+              }
             : msg
         )
       );

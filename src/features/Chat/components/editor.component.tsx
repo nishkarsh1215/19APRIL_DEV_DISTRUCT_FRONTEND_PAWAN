@@ -44,11 +44,9 @@ export const CodeEditor: FC<{ isEditLoading: boolean }> = ({
       try {
         const { data } = await getMessages(chat_id);
         const remote = JSON.parse(data.editor_message.response || "{}");
-        console.log("ediiiiiiiiiiiiitor msg");
-        console.log(remote);
         setFiles(remote.files || {});
-      } catch (err) {
-        console.error("Failed to load remote files:", err);
+      } catch (error: any) {
+        throw new Error(error);
       }
     })();
   }, [chat_id]);
@@ -79,7 +77,6 @@ export const CodeEditor: FC<{ isEditLoading: boolean }> = ({
   const onSave = async () => {
     setIsSaveLoading(true);
     if (!chat_id) return;
-    console.log("Saved Files Data ", sandpack.files);
     setTimeout(() => {
       updateEditorMessage(chat_id, JSON.stringify(sandpack.files))
         .then(() => {

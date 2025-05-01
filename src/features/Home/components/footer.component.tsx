@@ -1,5 +1,3 @@
-"use client";
-
 import { Mail, Github, Twitter, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 

@@ -1,11 +1,8 @@
-"use client";
-
-import { Switch } from "@/components/ui/switch";
-import { useState } from "react";
-import { Footer, PricingCard } from "../components";
+import { useUser } from "@/hooks";
+import { Footer, PricingCard, TokenBalanceCard } from "../components";
 
 export function PricingPage() {
-  const [annualBilling, setAnnualBilling] = useState(false);
+  const { user } = useUser();
 
   const pricingPlans = [
     {
@@ -31,6 +28,15 @@ export function PricingPage() {
     }
   ];
 
+  let tokenBalance;
+  // Sample token balance data
+  if (user)
+    tokenBalance = {
+      remaining: user?.freeCredits ? Number(user.freeCredits) : 0,
+      total: 1000000,
+      percentRemaining: (Number(user.freeCredits) / 1000000) * 100 || 0
+    };
+
   return (
     <>
       <section className="container mx-auto px-4 py-16 max-w-6xl">
@@ -41,27 +47,16 @@ export function PricingPage() {
           environments.
         </p>
 
-        <div className="flex justify-end items-center mb-8">
-          <span
-            className={`mr-2 ${annualBilling ? "text-white" : "text-gray-400"}`}
-          >
-            Annual billing
-          </span>
-          <Switch
-            checked={annualBilling}
-            onCheckedChange={setAnnualBilling}
-            aria-label={
-              annualBilling
-                ? "Switch to monthly billing"
-                : "Switch to annual billing"
-            }
-          />
-          <span className="sr-only">
-            {annualBilling
-              ? "Annual billing enabled - save 20%"
-              : "Monthly billing"}
-          </span>
-        </div>
+        {/* Token Balance Card */}
+        {user ? (
+          <div className="mb-12">
+            <TokenBalanceCard
+              tokenBalance={tokenBalance?.remaining}
+              totalTokens={tokenBalance?.total}
+              percentRemaining={tokenBalance?.percentRemaining}
+            />
+          </div>
+        ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {pricingPlans.map((plan) => (
@@ -72,7 +67,6 @@ export function PricingPage() {
               tokens={plan.tokens}
               originalTokens={plan.originalTokens}
               description={plan.description}
-              annualBilling={annualBilling}
             />
           ))}
         </div>

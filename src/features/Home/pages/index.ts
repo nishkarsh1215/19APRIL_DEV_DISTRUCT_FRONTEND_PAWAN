@@ -6,3 +6,4 @@ export * from "./contact.page";
 export * from "./privacy.page";
 export * from "./refund.page";
 export * from "./tnc.page";
+export * from "./token-limit.page";

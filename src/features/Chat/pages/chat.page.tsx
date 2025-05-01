@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEditorStore } from "@/store/editor.store";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -51,8 +52,8 @@ const DownloadButton = () => {
       // Clean up
       URL.revokeObjectURL(url);
       document.body.removeChild(link);
-    } catch (error) {
-      console.error("Failed to download project files:", error);
+    } catch (error: any) {
+      throw new Error(error);
     }
   };
 
@@ -84,30 +85,48 @@ export const ChatPage = () => {
 
   const firstCodeGen = async () => {
     setIsLoading(true);
-    console.log("first code gen");
-    const firstPrompt = Prompt.CODE_GEN_PROMPT;
-    console.log("first prompt");
-    console.log(firstPrompt);
     try {
-      const response = await sendCodeMessage({
+      // Create a prompt that includes information about available resources
+      const promptText = message?.prompt || "Create a React application";
+
+      // Build a context-aware prompt that mentions Figma if available
+      let contextPrompt = "";
+      if (message?.figma_file) {
+        contextPrompt +=
+          "I have uploaded a Figma design. Please create a React implementation that matches this design. ";
+      }
+      if (message?.imageUrl) {
+        contextPrompt +=
+          "I have uploaded an image for reference. Please incorporate elements from this image in the design. ";
+      }
+
+      const firstPrompt = `${contextPrompt}${promptText} ${Prompt.CODE_GEN_PROMPT}`;
+
+      // Create the request payload
+      const payload: any = {
         chat_id,
         prompt: firstPrompt
-      });
-      const tempImageUrl = message?.imageUrl;
-      console.log("heyyyyyyyyyyyyyyy");
-      console.log(response.data.response);
+      };
+
+      // Add files to the request if they exist
+      if (message?.figma_file) {
+        payload.figma = message.figma_file;
+      }
+
+      const response = await sendCodeMessage(payload);
 
       const Newmessage: Message = {
-        prompt: message?.prompt ?? "",
-        imageUrl: tempImageUrl || undefined,
+        ...message,
+        prompt: promptText,
         firstResponse: response.data.response
       };
+
       setMessage(Newmessage);
+      console.log("Response from AI:", response.data.response);
       setFiles(JSON.parse(response.data.response));
-      // setEditorMessage(newEditorMessage)
-    } catch (err) {
-      console.error("Failed to generate AI code", err);
+    } catch (error: any) {
       firstCodeGen();
+      console.error("Failed to generate AI code:", error);
     } finally {
       setIsLoading(false);
     }
@@ -119,49 +138,30 @@ export const ChatPage = () => {
   }, []);
 
   const generateAiCode = async () => {
-    console.log("generate ai code");
     setIsEditLoading(true);
 
     const PROMPT =
-      "PLEASE RETURN THE FULL CODE, DO THE NECESSARY CHANGES AFTER READING THE INPUT BUT PLEASE RETURN THE FULL CODE... EVERYTHING SHOULD BE RETURNED...\n" +
-      "THIS IS INPUT AND INSTRUCTIONS --> " +
       inputText +
       "\n" +
-      "THIS IS THE CODE --> " +
       JSON.stringify(files, null, 2) +
       "\n" +
       "PLEASE WRITE FULL CODE, WHAT I SENT AND FOLLOW THE INSTRUCTIONS AND USE THE SAME PATTERN AND STYLE IN WHICH CODE IS";
-    console.log("EXTRA PROMPT");
-    console.log(PROMPT);
     try {
       const response = await sendCodeMessage({
         chat_id,
         prompt: PROMPT
       });
-      const tempImageUrl = message?.imageUrl;
-      console.log("heyyyyyyyyyyyyyyy");
-      console.log(response.data.response);
 
       const Newmessage: Message = {
-        prompt: message?.prompt ?? "",
-        imageUrl: tempImageUrl || undefined,
+        ...message,
+        prompt: message?.prompt || "",
         firstResponse: response.data.response
       };
       setMessage(Newmessage);
 
-      // NEW: Immediately store the entire returned "files" data into editorMessage for Editor usage
-      // const newEditorMessage = {
-      //   message_id: uuidv4(),
-      //   prompt: PROMPT,
-      //   response: response.data.response, // a JSON string containing { files: { ... } }
-      //   created_at: new Date().toISOString(),
-      // }
       setFiles(JSON.parse(response.data.response));
-      // setEditorMessage(newEditorMessage)
-      setIsEditLoading(false);
-    } catch (err) {
-      console.error("Failed to generate AI code", err);
-      setIsEditLoading(false);
+    } catch (err: any) {
+      console.error("Failed to update code:", err);
       generateAiCode();
     } finally {
       setIsFilesLoading(false);

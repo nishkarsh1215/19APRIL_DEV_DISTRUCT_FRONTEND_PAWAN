@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from "axios";
 
 export const getCredits = () => {
@@ -61,17 +62,63 @@ export const resendVerification = (data: { email: string }) => {
   return axios.post(`http://localhost:5000/api/auth/resend-verification`, data);
 };
 
-export const createChat = (data: {
+export const createChat = async ({
+  title,
+  prompt,
+  image,
+  figma_file
+}: {
   title: string;
   prompt: string;
   image?: string;
+  figma_file?: string;
 }) => {
-  return axios.post("http://localhost:5000/api/chat/create", data, {
-    withCredentials: true
-  });
+  // Create a FormData object
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("prompt", prompt);
+
+  // Add image directly if it exists - don't convert it
+  if (image) {
+    formData.append("image", image);
+    console.log("Added image directly to FormData");
+  }
+
+  // Add Figma file directly if it exists - don't convert it
+  if (figma_file) {
+    formData.append("figma_file", figma_file);
+    console.log("Added Figma file directly to FormData");
+  }
+
+  try {
+    // Send the FormData as is
+    return await axios.post("http://localhost:5000/api/chat/create", formData, {
+      withCredentials: true
+    });
+  } catch (error: any) {
+    console.error("Error creating chat:", error.message);
+    console.error("Status:", error.response?.status);
+    console.error("Server response:", error.response?.data);
+
+    // Try again with a simple JSON request if FormData fails
+    try {
+      console.log("Falling back to simple JSON payload");
+      return await axios.post(
+        "http://localhost:5000/api/chat/create",
+        { title, prompt },
+        { withCredentials: true }
+      );
+    } catch (fallbackError: any) {
+      console.error("Fallback request also failed:", fallbackError.message);
+      throw new Error(
+        `Chat creation failed: ${
+          fallbackError.response?.data?.message || fallbackError.message
+        }`
+      );
+    }
+  }
 };
 
-// Modified sendMessage to use FormData if an image is provided
 export const sendMessage = (data: {
   chat_id?: string;
   prompt: string;
@@ -90,23 +137,45 @@ export const sendMessage = (data: {
     withCredentials: true
   });
 };
-export const sendCodeMessage = (data: {
+
+export const sendCodeMessage = async ({
+  chat_id,
+  prompt,
+  figma = undefined
+}: {
   chat_id?: string;
   prompt: string;
-  image?: File;
+  figma?: string;
 }) => {
-  if (data.image) {
-    const formData = new FormData();
-    if (data.chat_id) formData.append("chat_id", data.chat_id);
-    formData.append("prompt", data.prompt);
-    formData.append("image", data.image);
-    return axios.post("http://localhost:5000/api/chat/send-code", formData, {
-      withCredentials: true
-    });
+  // Use a simple FormData approach
+  const formData = new FormData();
+  formData.append("chat_id", chat_id || "");
+  formData.append("prompt", prompt);
+
+  // Add figma file directly if it exists
+  if (figma) {
+    formData.append("figma_file", figma);
+    console.log("Added Figma file directly to FormData");
   }
-  return axios.post("http://localhost:5000/api/chat/send-code", data, {
-    withCredentials: true
-  });
+
+  try {
+    return await axios.post(
+      "http://localhost:5000/api/chat/send-code",
+      formData,
+      {
+        withCredentials: true
+      }
+    );
+  } catch (error) {
+    console.error("Error sending code message:", error);
+
+    // Fallback to JSON request
+    return axios.post(
+      "http://localhost:5000/api/chat/send-code",
+      { chat_id: chat_id || "", prompt },
+      { withCredentials: true }
+    );
+  }
 };
 
 export const getChats = () => {
