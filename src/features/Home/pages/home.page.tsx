@@ -297,6 +297,7 @@ export const HomePage = () => {
                 onImageCropped={(croppedImage) => {
                   setImagePreviewUrl(croppedImage);
                   setIsActive(true);
+                  console.log("ImageUrl: ", croppedImage);
                 }}
               />
 

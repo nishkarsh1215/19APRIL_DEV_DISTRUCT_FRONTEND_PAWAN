@@ -49,7 +49,6 @@ const Prompt: Prompts = {
     3. Hooks in \`/src/hooks\` and feature-specific hooks in \`/src/features/*\` for shared and feature logic.
 
     — \`package.json\` (at project root) must list all dependencies actually used:
-    \`\`\`json
     {
       "name": "react-app",
       "version": "1.0.0",
@@ -75,7 +74,6 @@ const Prompt: Prompts = {
         "autoprefixer": "latest"
       }
     }
-    \`\`\`
 
     — Templates & placeholders:
     - Use \`https://archive.org/download/placeholder-image/placeholder-image.jpg\` for any placeholder images.
@@ -88,15 +86,13 @@ const Prompt: Prompts = {
     - Do not duplicate filenames in different directories.
     - Use JSX, React hooks, and Tailwind CSS classes.
     - Import Lucide icons only when needed:
-      \`\`\`js
       import { Heart } from "lucide-react";
       // ...
       <Heart className="w-6 h-6 text-red-500" />
-      \`\`\`
     - Include \`tailwind.config.js\` and \`postcss.config.js\` with minimal setup for Tailwind.
 
     Return the full project manifest as JSON, for example:
-    \`\`\`json
+  
     {
       "/package.json": { "code": "…full package.json…" },
       "/index.js":       { "code": "…bootstrap ReactDOM…" },
@@ -104,7 +100,7 @@ const Prompt: Prompts = {
       "/index.css":      { "code": "…Tailwind imports…" },
       …
     }
-    \`\`\`
+   
   `
 };
 

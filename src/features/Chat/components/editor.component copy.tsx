@@ -78,7 +78,6 @@ export const CodeEditor: FC = () => {
     []
   );
 
-  // NEW: Use useState instead of useLocalStorage
   const [files, setFiles] =
     useState<Record<string, CodeFile>>(transformedFiles);
 

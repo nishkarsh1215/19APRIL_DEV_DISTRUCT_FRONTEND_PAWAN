@@ -14,10 +14,11 @@ import {
 import { SandpackProvider, useSandpack } from "@codesandbox/sandpack-react";
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { sendCodeMessage } from "@/features/Authentication/services";
+import { getChat, sendCodeMessage } from "@/features/Authentication/services";
 import { Message, MessageContext } from "@/store/message.store";
 import Prompt from "@/constants/Prompt";
 import { FilesContext } from "@/store/file.store";
+import { toast } from "sonner";
 
 const DownloadButton = () => {
   const { sandpack } = useSandpack();
@@ -89,23 +90,13 @@ export const ChatPage = () => {
       // Create a prompt that includes information about available resources
       const promptText = message?.prompt || "Create a React application";
 
-      // Build a context-aware prompt that mentions Figma if available
-      let contextPrompt = "";
-      if (message?.figma_file) {
-        contextPrompt +=
-          "I have uploaded a Figma design. Please create a React implementation that matches this design. ";
-      }
-      if (message?.imageUrl) {
-        contextPrompt +=
-          "I have uploaded an image for reference. Please incorporate elements from this image in the design. ";
-      }
-
-      const firstPrompt = `${contextPrompt}${promptText} ${Prompt.CODE_GEN_PROMPT}`;
+      const firstPrompt = `${promptText} ${Prompt.CODE_GEN_PROMPT}`;
 
       // Create the request payload
       const payload: any = {
         chat_id,
-        prompt: firstPrompt
+        prompt: firstPrompt,
+        image: message?.imageUrl
       };
 
       // Add files to the request if they exist
@@ -132,10 +123,111 @@ export const ChatPage = () => {
     }
   };
 
+  const fetchExistingChat = async () => {
+    setIsLoading(true);
+    try {
+      const response = await getChat(chat_id!);
+      console.log("Fetched existing chat:", response.data);
+
+      // Check if there are messages in the chat
+      if (response.data.messages && response.data.messages.length > 0) {
+        // Look for the most recent code response
+        const codeMessages = response.data.messages.filter(
+          (msg: any) =>
+            msg.type === "code" ||
+            (msg.content.includes("{") && msg.content.includes("}"))
+        );
+
+        if (codeMessages.length > 0) {
+          // Get the most recent code message
+          const latestCodeMessage = codeMessages[codeMessages.length - 1];
+
+          try {
+            // Try to parse the code content
+            const codeContent =
+              latestCodeMessage.content || latestCodeMessage.response;
+            setFiles(JSON.parse(codeContent));
+
+            // Update the message context
+            const fetchedMessage: Message = {
+              ...message,
+              prompt: response.data.prompt || "",
+              firstResponse: codeContent
+            };
+            setMessage(fetchedMessage);
+            console.log("Loaded code from message:", codeContent);
+          } catch (parseError) {
+            console.error("Error parsing code content:", parseError);
+            toast.error("Error parsing code data");
+            fallbackToFirstResponse(response.data);
+          }
+        } else {
+          // No code messages found, fall back to firstResponse
+          fallbackToFirstResponse(response.data);
+        }
+      } else {
+        // No messages, fall back to firstResponse
+        fallbackToFirstResponse(response.data);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch existing chat:", error);
+      toast.error("Failed to load chat data. Generating new content.");
+      firstCodeGen();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper function to use the firstResponse as a fallback
+  const fallbackToFirstResponse = (chatData: any) => {
+    if (chatData.firstResponse || chatData.editor_message) {
+      try {
+        // Try firstResponse first, then editor_message
+        const codeContent = chatData.firstResponse || chatData.editor_message;
+        setFiles(JSON.parse(codeContent));
+
+        // Update the message context
+        const fetchedMessage: Message = {
+          ...message,
+          prompt: chatData.prompt || "",
+          firstResponse: codeContent
+        };
+        setMessage(fetchedMessage);
+        console.log("Loaded code from firstResponse/editor_message");
+      } catch (parseError) {
+        console.error(
+          "Error parsing firstResponse/editor_message:",
+          parseError
+        );
+        toast.error("Could not load saved code. Generating new content.");
+        firstCodeGen();
+      }
+    } else {
+      // No valid code found anywhere, generate new code
+      console.log("No code content found in chat data, generating new code");
+      firstCodeGen();
+    }
+  };
+
   useEffect(() => {
-    firstCodeGen();
+    // Check if the current chat_id exists in the chats array in localStorage
+    const storedChats = localStorage.getItem("chats");
+    const chatsArray = storedChats ? JSON.parse(storedChats) : [];
+
+    if (chat_id) {
+      if (chatsArray.includes(chat_id)) {
+        // Chat exists, fetch its data
+        fetchExistingChat();
+      } else {
+        // New chat, add to localStorage and generate code
+        chatsArray.push(chat_id);
+        localStorage.setItem("chats", JSON.stringify(chatsArray));
+        firstCodeGen();
+      }
+    }
+
     setIsFilesLoading(false);
-  }, []);
+  }, [chat_id]);
 
   const generateAiCode = async () => {
     setIsEditLoading(true);
@@ -149,7 +241,8 @@ export const ChatPage = () => {
     try {
       const response = await sendCodeMessage({
         chat_id,
-        prompt: PROMPT
+        prompt: PROMPT,
+        image: message?.imageUrl
       });
 
       const Newmessage: Message = {

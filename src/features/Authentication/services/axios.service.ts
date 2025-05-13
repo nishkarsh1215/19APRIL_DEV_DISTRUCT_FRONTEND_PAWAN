@@ -141,16 +141,19 @@ export const sendMessage = (data: {
 export const sendCodeMessage = async ({
   chat_id,
   prompt,
-  figma = undefined
+  figma = undefined,
+  image = undefined
 }: {
   chat_id?: string;
   prompt: string;
   figma?: string;
+  image?: string;
 }) => {
   // Use a simple FormData approach
   const formData = new FormData();
   formData.append("chat_id", chat_id || "");
   formData.append("prompt", prompt);
+  formData.append("image", image || "");
 
   // Add figma file directly if it exists
   if (figma) {
