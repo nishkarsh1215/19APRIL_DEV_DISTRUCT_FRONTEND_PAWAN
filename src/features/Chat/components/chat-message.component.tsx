@@ -29,8 +29,81 @@ export function ChatMessage({
   isLiked,
   isDisliked
 }: ChatMessageProps) {
+  // Function to extract text from code responses that might be in JSON format
+  const extractTextFromResponse = (response: string | undefined): string => {
+    if (!response) return "";
+
+    // Check if the response looks like a JSON object (starts with '{')
+    if (response.trim().startsWith("{")) {
+      try {
+        // Try to parse it as JSON
+        const jsonObj = JSON.parse(response);
+
+        // If it's a JSON object with a file structure
+        if (typeof jsonObj === "object") {
+          // Try to find the first file with code
+          for (const key in jsonObj) {
+            if (jsonObj[key]?.code) {
+              const codeContent = jsonObj[key].code;
+
+              // If the code content starts and ends with quotes, remove them
+              if (
+                typeof codeContent === "string" &&
+                codeContent.startsWith('"') &&
+                codeContent.endsWith('"')
+              ) {
+                return codeContent.slice(1, -1);
+              }
+
+              return codeContent.toString();
+            }
+          }
+        }
+        // If we couldn't extract, return original
+        return response;
+      } catch (e) {
+        console.log("JSON parse error (expected for plain text):", e);
+        // If it's not valid JSON, just return the original response
+        return response;
+      }
+    } else {
+      // If it doesn't look like JSON, return it as is
+      return response;
+    }
+  };
+
+  // Function to clean system prompts from user messages
+  const cleanUserPrompt = (prompt: string | undefined): string => {
+    if (!prompt) return "";
+
+    // Remove all the system prompts and instructions
+    // Strip the "You are AI Assistant..." part and all other system instructions
+    const systemPromptPatterns = [
+      /You are an? AI Assistant[^.]*.{0,500}GUIDELINES:.{0,1000}/s,
+      /You are an? AI[^.]*.{0,200}GUIDELINES:.{0,1000}/s,
+      /GUIDELINES:.{0,1000}/s,
+      /You are a[^.]*.{0,500}/s,
+      /PLEASE[^.]*.{0,300}/s
+    ];
+
+    let cleaned = prompt;
+    systemPromptPatterns.forEach((pattern) => {
+      cleaned = cleaned.replace(pattern, "");
+    });
+
+    return cleaned.trim();
+  };
+
   // Determine role based on presence of a response; if response exists, use assistant avatar
   const isAssistant = !!message.response;
+
+  // Process the response text if it's from the assistant
+  const displayResponse = isAssistant
+    ? extractTextFromResponse(message.response)
+    : message.response;
+
+  // Clean the user prompt to remove system instructions
+  const displayPrompt = cleanUserPrompt(message.prompt || "");
 
   return (
     <div
@@ -46,14 +119,14 @@ export function ChatMessage({
               : "bg-primary text-primary-foreground"
           }`}
         >
-          {/* Render prompt if available */}
-          {message.prompt && (
+          {/* Render prompt if available - use the clean display prompt */}
+          {displayPrompt && (
             <div className="mb-4 flex gap-4 items-center border-b border-b-slate-600 pb-2 w-full">
               <Avatar className="size-6 text-xs mt-1">
                 <AvatarFallback>U</AvatarFallback>
                 <AvatarImage src="/user-avatar.png" />
               </Avatar>
-              {message.prompt}
+              {displayPrompt}
             </div>
           )}
           {/* Render response if available or loading indicator */}
@@ -84,7 +157,7 @@ export function ChatMessage({
                   <AvatarImage src="/assistant-avatar.png" />
                 </Avatar>
                 <ReactMarkdown className="markdown-body">
-                  {message.response}
+                  {displayResponse}
                 </ReactMarkdown>
               </div>
             )

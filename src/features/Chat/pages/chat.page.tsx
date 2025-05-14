@@ -123,51 +123,39 @@ export const ChatPage = () => {
     }
   };
 
+  // Helper function to clean prompts of system instructions
+  const cleanPrompt = (prompt: string | undefined): string => {
+    if (!prompt) return "";
+    return prompt.replace(Prompt.CHAT_PROMPT, "").trim();
+  };
+
   const fetchExistingChat = async () => {
     setIsLoading(true);
     try {
       const response = await getChat(chat_id!);
-      console.log("Fetched existing chat:", response.data);
+      console.log(
+        "Fetched existing chat:",
+        response.data.code_messages[response.data.code_messages.length - 1]
+      );
 
-      // Check if there are messages in the chat
-      if (response.data.messages && response.data.messages.length > 0) {
-        // Look for the most recent code response
-        const codeMessages = response.data.messages.filter(
-          (msg: any) =>
-            msg.type === "code" ||
-            (msg.content.includes("{") && msg.content.includes("}"))
-        );
+      // If there are messages, check for the most recent code response
+      if (
+        response.data.code_messages &&
+        response.data.code_messages.length > 0
+      ) {
+        const codeContent =
+          response.data.code_messages[response.data.code_messages.length - 1]
+            .response;
+        setFiles(JSON.parse(codeContent));
 
-        if (codeMessages.length > 0) {
-          // Get the most recent code message
-          const latestCodeMessage = codeMessages[codeMessages.length - 1];
-
-          try {
-            // Try to parse the code content
-            const codeContent =
-              latestCodeMessage.content || latestCodeMessage.response;
-            setFiles(JSON.parse(codeContent));
-
-            // Update the message context
-            const fetchedMessage: Message = {
-              ...message,
-              prompt: response.data.prompt || "",
-              firstResponse: codeContent
-            };
-            setMessage(fetchedMessage);
-            console.log("Loaded code from message:", codeContent);
-          } catch (parseError) {
-            console.error("Error parsing code content:", parseError);
-            toast.error("Error parsing code data");
-            fallbackToFirstResponse(response.data);
-          }
-        } else {
-          // No code messages found, fall back to firstResponse
-          fallbackToFirstResponse(response.data);
-        }
-      } else {
-        // No messages, fall back to firstResponse
-        fallbackToFirstResponse(response.data);
+        // Update the message context with chat title and clean prompt
+        const fetchedMessage: Message = {
+          ...message,
+          prompt: cleanPrompt(response.data.prompt || ""), // Clean the prompt for UI display
+          firstResponse: codeContent
+        };
+        setMessage(fetchedMessage);
+        console.log("Loaded code from latest message");
       }
     } catch (error: any) {
       console.error("Failed to fetch existing chat:", error);
@@ -178,73 +166,67 @@ export const ChatPage = () => {
     }
   };
 
-  // Helper function to use the firstResponse as a fallback
-  const fallbackToFirstResponse = (chatData: any) => {
-    if (chatData.firstResponse || chatData.editor_message) {
-      try {
-        // Try firstResponse first, then editor_message
-        const codeContent = chatData.firstResponse || chatData.editor_message;
-        setFiles(JSON.parse(codeContent));
-
-        // Update the message context
-        const fetchedMessage: Message = {
-          ...message,
-          prompt: chatData.prompt || "",
-          firstResponse: codeContent
-        };
-        setMessage(fetchedMessage);
-        console.log("Loaded code from firstResponse/editor_message");
-      } catch (parseError) {
-        console.error(
-          "Error parsing firstResponse/editor_message:",
-          parseError
-        );
-        toast.error("Could not load saved code. Generating new content.");
-        firstCodeGen();
-      }
-    } else {
-      // No valid code found anywhere, generate new code
-      console.log("No code content found in chat data, generating new code");
-      firstCodeGen();
-    }
-  };
-
   useEffect(() => {
+    if (!chat_id) return;
+
+    setIsLoading(true);
+
     // Check if the current chat_id exists in the chats array in localStorage
     const storedChats = localStorage.getItem("chats");
     const chatsArray = storedChats ? JSON.parse(storedChats) : [];
 
-    if (chat_id) {
-      if (chatsArray.includes(chat_id)) {
-        // Chat exists, fetch its data
-        fetchExistingChat();
-      } else {
-        // New chat, add to localStorage and generate code
-        chatsArray.push(chat_id);
-        localStorage.setItem("chats", JSON.stringify(chatsArray));
-        firstCodeGen();
-      }
+    if (chatsArray.includes(chat_id)) {
+      // Chat exists, fetch its data
+      fetchExistingChat();
+    } else {
+      // New chat, add to localStorage and generate code
+      chatsArray.push(chat_id);
+      localStorage.setItem("chats", JSON.stringify(chatsArray));
+      firstCodeGen();
     }
 
     setIsFilesLoading(false);
-  }, [chat_id]);
+  }, [chat_id]); // Only depend on chat_id to prevent unnecessary rerenders
 
   const generateAiCode = async () => {
-    setIsEditLoading(true);
+    if (!inputText || inputText.trim() === "") {
+      toast.error("Please enter a prompt before generating code");
+      return;
+    }
 
-    const PROMPT =
-      inputText +
-      "\n" +
-      JSON.stringify(files, null, 2) +
-      "\n" +
-      "PLEASE WRITE FULL CODE, WHAT I SENT AND FOLLOW THE INSTRUCTIONS AND USE THE SAME PATTERN AND STYLE IN WHICH CODE IS";
+    setIsEditLoading(true);
+    toast.info("Generating code...");
+
     try {
+      // Format the prompt to be more explicit about what we want
+      const PROMPT = `
+${inputText}
+
+Here's the current code structure:
+${JSON.stringify(files, null, 2)}
+
+INSTRUCTIONS:
+- Please update the code based on my request
+- Return the complete codebase as a valid JSON object WITHOUT any markdown formatting
+- DO NOT use markdown code blocks (no \`\`\`json)
+- Return ONLY the raw JSON object
+- Maintain the same file structure
+- Ensure the code is valid and follows the existing patterns
+- Make sure special characters like quotes are properly escaped
+`;
+
+      console.log("Sending prompt:", PROMPT);
+      console.log("Using chat_id:", chat_id);
+
       const response = await sendCodeMessage({
         chat_id,
         prompt: PROMPT,
         image: message?.imageUrl
       });
 
+      console.log("Response received:", response.data);
+
+      // First update the message context
       const Newmessage: Message = {
         ...message,
         prompt: message?.prompt || "",
@@ -252,10 +234,144 @@ export const ChatPage = () => {
       };
       setMessage(Newmessage);
 
-      setFiles(JSON.parse(response.data.response));
+      // Extract and fix JSON function with more robust handling
+      const extractAndFixJSON = (text: string) => {
+        // Function to find all matched JSON objects and return the largest valid one
+        const findValidJSON = (input: string) => {
+          // First try: Find content between code blocks
+          const codeBlockPattern =
+            /```(?:json|javascript|typescript|jsx|tsx)?\n?([\s\S]*?)```/g;
+          let match;
+          const potentialJSONs = [];
+
+          while ((match = codeBlockPattern.exec(input)) !== null) {
+            potentialJSONs.push(match[1].trim());
+          }
+
+          // Second try: Find all content between curly braces (assuming it's a JSON object)
+          const startIndexes = [];
+          const endIndexes = [];
+          let depth = 0;
+
+          for (let i = 0; i < input.length; i++) {
+            if (input[i] === "{") {
+              if (depth === 0) {
+                startIndexes.push(i);
+              }
+              depth++;
+            } else if (input[i] === "}") {
+              depth--;
+              if (depth === 0) {
+                endIndexes.push(i);
+              }
+            }
+          }
+
+          // Collect all potential JSON objects from the braces matching
+          for (let i = 0; i < startIndexes.length; i++) {
+            if (i < endIndexes.length) {
+              potentialJSONs.push(
+                input.substring(startIndexes[i], endIndexes[i] + 1)
+              );
+            }
+          }
+
+          // Sort by length (descending) to try the largest potential JSON first
+          potentialJSONs.sort((a, b) => b.length - a.length);
+
+          // Try to parse each potential JSON
+          for (const jsonStr of potentialJSONs) {
+            try {
+              return JSON.parse(jsonStr);
+            } catch (e) {
+              console.log(e);
+              // Try to fix common issues
+              try {
+                // Fix for unescaped quotes in JSON strings
+                const fixedJSON = jsonStr
+                  .replace(/([^\\])\\n/g, "$1\\\\n") // Fix escaped newlines
+                  .replace(/([^\\])\\r/g, "$1\\\\r") // Fix escaped returns
+                  .replace(/([^\\])\\t/g, "$1\\\\t") // Fix escaped tabs
+                  .replace(/\t/g, "\\t") // Replace tabs with escaped tabs
+                  .replace(/\r/g, "\\r") // Replace returns with escaped returns
+                  .replace(/\n(?=[^"]*"[^"]*(?:"[^"]*"[^"]*)*$)/g, "\\n") // Replace newlines inside JSON strings
+                  .replace(/([a-zA-Z0-9])"/g, '$1\\"') // Fix unescaped quotes
+                  .replace(/"{/g, '\\"{') // Fix quotes before objects
+                  .replace(/}"/g, '}\\"'); // Fix quotes after objects
+
+                return JSON.parse(fixedJSON);
+              } catch (fixError) {
+                console.log("Failed to fix JSON:", fixError);
+                // Continue to the next potential JSON
+              }
+            }
+          }
+
+          return null; // No valid JSON found
+        };
+
+        // Try to find and parse a valid JSON
+        const result = findValidJSON(text);
+        if (result) {
+          return result;
+        }
+
+        // As a last resort, try to manually process the text
+        try {
+          // Find the start and end of what looks like a JSON object
+          const firstBrace = text.indexOf("{");
+          const lastBrace = text.lastIndexOf("}");
+
+          if (firstBrace !== -1 && lastBrace !== -1 && firstBrace < lastBrace) {
+            // Ensure we're not cutting off in the middle of a string
+            // Count quotes to make sure they're balanced
+            const substring = text.substring(firstBrace, lastBrace + 1);
+            let quoteCount = 0;
+
+            for (let i = 0; i < substring.length; i++) {
+              if (
+                substring[i] === '"' &&
+                (i === 0 || substring[i - 1] !== "\\")
+              ) {
+                quoteCount++;
+              }
+            }
+
+            // If quotes are balanced (even count), proceed
+            if (quoteCount % 2 === 0) {
+              try {
+                return JSON.parse(substring);
+              } catch (e) {
+                console.error("Final parsing attempt failed:", e);
+              }
+            } else {
+              console.error("Unbalanced quotes in JSON extraction");
+            }
+          }
+        } catch (e) {
+          console.error("Manual JSON extraction failed:", e);
+        }
+
+        return null;
+      };
+
+      // Try to extract and parse the JSON
+      const extractedJSON = extractAndFixJSON(response.data.response);
+
+      if (extractedJSON) {
+        console.log("Successfully extracted and parsed JSON");
+        setFiles(extractedJSON);
+        toast.success("Code updated successfully");
+      } else {
+        // If all extraction methods fail, keep existing files
+        console.error("All JSON extraction methods failed");
+        toast.error(
+          "Couldn't parse AI response as valid code. Keeping existing code."
+        );
+      }
     } catch (err: any) {
       console.error("Failed to update code:", err);
-      generateAiCode();
+      toast.error("Error communicating with the AI service. Please try again.");
     } finally {
       setIsFilesLoading(false);
       setIsEditLoading(false);
@@ -430,70 +546,71 @@ export const ChatPage = () => {
                   }}
                   onEnter={() => {
                     generateAiCode();
-                    // You can call any function here (e.g., trigger AI code, log analytics, etc.)
                   }}
                 />
               </SheetContent>
             </Sheet>
           </div>
         ) : (
-          // Desktop View: Side by side layout
-          <div className="w-full h-full">
-            <ResizablePanelGroup direction="horizontal">
-              <ResizablePanel defaultSize={20} className="relative">
-                <ChatInterface
-                  isMobile={false}
-                  onInputChange={(text) => {
-                    setInputText(text);
-                  }}
-                  onEnter={() => {
-                    generateAiCode();
-                    // You can call any function here (e.g., trigger AI code, log analytics, etc.)
-                  }}
-                />
-              </ResizablePanel>
-              {isFilesLoading ? (
-                <>
-                  <ResizableHandle withHandle />
-                  <ResizablePanel defaultSize={80} className="relative">
-                    <AnimatePresence>
-                      <motion.div
-                        key="editor"
-                        className="flex gap-2 flex-1 items-center justify-center h-screen w-full"
-                        initial={{ opacity: 0, x: 300 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 300 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <span>Sit Tight while we do the magic</span>{" "}
-                        <Loader2 className="animate-spin" />
-                      </motion.div>
-                    </AnimatePresence>
-                  </ResizablePanel>
-                </>
-              ) : (
-                isEditorOpen && (
+          // Desktop View: Side by side layout with proper sidebar
+          <div className="w-full h-full flex">
+            {/* Main content area */}
+            <div className="flex-1">
+              <ResizablePanelGroup direction="horizontal">
+                <ResizablePanel defaultSize={30} className="relative">
+                  <ChatInterface
+                    isMobile={false}
+                    onInputChange={(text) => {
+                      setInputText(text);
+                    }}
+                    onEnter={() => {
+                      generateAiCode();
+                    }}
+                  />
+                </ResizablePanel>
+                {isFilesLoading ? (
                   <>
                     <ResizableHandle withHandle />
-                    <ResizablePanel defaultSize={50} className="relative">
+                    <ResizablePanel defaultSize={70} className="relative">
                       <AnimatePresence>
                         <motion.div
                           key="editor"
-                          className="flex-1 h-full"
+                          className="flex gap-2 flex-1 items-center justify-center h-screen w-full"
                           initial={{ opacity: 0, x: 300 }}
                           animate={{ opacity: 1, x: 0 }}
                           exit={{ opacity: 0, x: 300 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <CodeEditor isEditLoading={isEditLoading} />
-                          <DownloadButton />
+                          <span>Sit Tight while we do the magic</span>{" "}
+                          <Loader2 className="animate-spin" />
                         </motion.div>
                       </AnimatePresence>
                     </ResizablePanel>
                   </>
-                )
-              )}
-            </ResizablePanelGroup>
+                ) : (
+                  isEditorOpen && (
+                    <>
+                      <ResizableHandle withHandle />
+                      <ResizablePanel defaultSize={70} className="relative">
+                        <AnimatePresence>
+                          <motion.div
+                            key="editor"
+                            className="flex-1 h-full"
+                            initial={{ opacity: 0, x: 300 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 300 }}
+                            transition={{ duration: 0.3 }}
+                          >
+                            <CodeEditor isEditLoading={isEditLoading} />
+                            <DownloadButton />
+                          </motion.div>
+                        </AnimatePresence>
+                      </ResizablePanel>
+                    </>
+                  )
+                )}
+              </ResizablePanelGroup>
+            </div>
           </div>
         )}
       </div>

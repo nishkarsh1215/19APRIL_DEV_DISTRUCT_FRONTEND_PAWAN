@@ -149,9 +149,10 @@ export const HomePage = () => {
     setIsLoading(true);
     setError(null); // Clear any previous errors
 
-    // Create a new message that includes both image and figma data
+    // Store only the user's input in the message context
+    // without any system prompts for display purposes
     const newMessage = {
-      prompt: input,
+      prompt: input, // Store the clean user input for UI display
       imageUrl: imagePreviewUrl || undefined,
       figma_file: figmaFile || undefined,
       firstResponse: ""
@@ -160,16 +161,16 @@ export const HomePage = () => {
     setMessage(newMessage);
 
     try {
+      // Only append system prompts for backend processing, not for UI display
       const { data } = await createChat({
         title: input.length > 20 ? `${input.slice(0, 20)}...` : input,
-        prompt: input + Prompt.CHAT_PROMPT,
+        prompt: input + Prompt.CHAT_PROMPT, // Include system prompt only for backend
         image: imagePreviewUrl || "",
-        figma_file: figmaFile || "" // Include Figma file data in API call
+        figma_file: figmaFile || ""
       });
       navigate(`/chat/${data.chat_id}`);
     } catch (error: any) {
       console.error("Chat creation failed:", error);
-      // Show a user-friendly error message
       setError(error.message || "Failed to create chat. Please try again.");
       setIsLoading(false);
     }

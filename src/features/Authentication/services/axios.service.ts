@@ -149,35 +149,63 @@ export const sendCodeMessage = async ({
   figma?: string;
   image?: string;
 }) => {
+  console.log("sendCodeMessage called with:", {
+    chat_id,
+    promptLength: prompt.length
+  });
+
+  // Enhance the prompt to explicitly request raw JSON without markdown
+  const enhancedPrompt =
+    prompt +
+    "\n\nIMPORTANT: Return ONLY a valid JSON object without any markdown formatting. Do NOT use code blocks (```json). The response should be directly parseable by JSON.parse().";
+
   // Use a simple FormData approach
   const formData = new FormData();
+
+  // Make sure chat_id is always a string
   formData.append("chat_id", chat_id || "");
-  formData.append("prompt", prompt);
-  formData.append("image", image || "");
+  formData.append("prompt", enhancedPrompt);
+
+  if (image) {
+    formData.append("image", image);
+    console.log("Added image to FormData");
+  }
 
   // Add figma file directly if it exists
   if (figma) {
     formData.append("figma_file", figma);
-    console.log("Added Figma file directly to FormData");
+    console.log("Added Figma file to FormData");
   }
 
   try {
-    return await axios.post(
+    console.log("Sending code message to API...");
+    const response = await axios.post(
       "http://localhost:5000/api/chat/send-code",
       formData,
       {
         withCredentials: true
       }
     );
-  } catch (error) {
-    console.error("Error sending code message:", error);
-
-    // Fallback to JSON request
-    return axios.post(
-      "http://localhost:5000/api/chat/send-code",
-      { chat_id: chat_id || "", prompt },
-      { withCredentials: true }
+    console.log("API response status:", response.status);
+    return response;
+  } catch (error: any) {
+    console.error(
+      "Error sending code message:",
+      error?.response?.data || error
     );
+
+    // If the error is specifically about FormData, try the JSON approach
+    if (error?.message?.includes("FormData")) {
+      console.log("Falling back to JSON request");
+      return axios.post(
+        "http://localhost:5000/api/chat/send-code",
+        { chat_id: chat_id || "", prompt: enhancedPrompt },
+        { withCredentials: true }
+      );
+    }
+
+    // Re-throw the error to be handled by the caller
+    throw error;
   }
 };
 
@@ -189,7 +217,12 @@ export const getChats = () => {
 
 export const getChat = (chat_id: string) => {
   return axios.get(`http://localhost:5000/api/chat/${chat_id}`, {
-    withCredentials: true
+    withCredentials: true,
+    params: {
+      include_messages: true, // Request to include messages in the response
+      include_code: true, // Request to include code content
+      sort: "desc" // Get messages in descending order (newest first)
+    }
   });
 };
 

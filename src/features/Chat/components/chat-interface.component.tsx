@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext, useRef, KeyboardEvent } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -52,6 +52,7 @@ export function ChatInterface({
   );
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { chat_id } = useParams();
 
@@ -64,6 +65,35 @@ export function ChatInterface({
     scrollToBottom();
   }, [messages]);
 
+  // Process messages received from backend to clean up the prompts
+  const processMessages = (messages: Message2[]): Message2[] => {
+    return messages.map((message) => {
+      if (message.prompt) {
+        // Extract only the actual user input by removing any system prompts
+        // Strip the "You are AI Assistant..." part and all other system instructions
+        const systemPromptPatterns = [
+          /You are an? AI Assistant[^.]*.{0,500}GUIDELINES:.{0,1000}/s,
+          /You are an? AI[^.]*.{0,200}GUIDELINES:.{0,1000}/s,
+          /GUIDELINES:.{0,1000}/s,
+          /You are a[^.]*.{0,500}/s,
+          /PLEASE[^.]*.{0,300}/s,
+          Prompt.CHAT_PROMPT
+        ];
+
+        let cleanPrompt = message.prompt;
+        systemPromptPatterns.forEach((pattern) => {
+          cleanPrompt = cleanPrompt.replace(pattern, "");
+        });
+
+        return {
+          ...message,
+          prompt: cleanPrompt.trim()
+        };
+      }
+      return message;
+    });
+  };
+
   useEffect(() => {
     setIsLoading(true);
     if (chat_id) {
@@ -71,7 +101,8 @@ export function ChatInterface({
         try {
           setIsLoading(true);
           const { data } = await getMessages(chat_id!);
-          setMessages(data.chat_messages || []);
+          // Process the messages to clean up prompts before setting them
+          setMessages(processMessages(data.chat_messages || []));
         } catch (error) {
           console.error("Error fetching messages", error);
         } finally {
@@ -81,17 +112,28 @@ export function ChatInterface({
     }
   }, [chat_id, editorMessage, setEditorMessage]);
 
+  useEffect(() => {
+    if (!isMobile && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isMobile]);
+
   const handleSend = async () => {
     // If user not authenticated, allow only 1 message
     if (!isAuthenticated && messages.length > 0) {
       window.location.href = "/auth";
       return;
     }
+
+    // Create the payload with the full prompt (user input + system prompt)
     const payload = {
       chat_id,
       prompt: input + Prompt.CHAT_PROMPT
     };
+
+    // But for the UI, only use the user's actual input
     const userMessage: Message2 = { id: uuidv4(), prompt: input };
+
     // Optimistic message with loading flag set
     const assistantMessage: Message2 = {
       id: uuidv4(),
@@ -100,14 +142,16 @@ export function ChatInterface({
       likes: 0,
       dislikes: 0
     };
+
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput("");
+
     try {
       await sendMessage(payload);
       if (chat_id) {
-        // Use the correct field "chat_messages" from the API response
+        // Fetch and process the updated messages
         const { data } = await getMessages(chat_id);
-        setMessages(data.chat_messages || []);
+        setMessages(processMessages(data.chat_messages || []));
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -127,12 +171,14 @@ export function ChatInterface({
     setIsLoading(false);
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
+  const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      handleSend();
-      if (onEnter) {
-        onEnter(input); // <- Trigger parent-defined function
+      if (input.trim()) {
+        handleSend();
+        if (onEnter) {
+          onEnter(input); // <- Trigger parent-defined function
+        }
       }
     }
   };
