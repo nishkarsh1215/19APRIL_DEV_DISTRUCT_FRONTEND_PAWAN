@@ -4,17 +4,17 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    port: 3000,
-    proxy: {
-      "/api": {
-        target: "http://147.93.111.242:5000",
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path // Optionally adjust the path if needed
-      }
-    }
-  },
+  // server: {
+  //   port: 3000,
+  //   proxy: {
+  //     "/api": {
+  //       target: "http://147.93.111.242:5000",
+  //       changeOrigin: true,
+  //       secure: false,
+  //       rewrite: (path) => path // Optionally adjust the path if needed
+  //     }
+  //   }
+  // },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src")
