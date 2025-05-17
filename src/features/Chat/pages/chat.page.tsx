@@ -514,7 +514,7 @@ INSTRUCTIONS:
       template="react"
       files={files}
       options={{
-        bundlerURL: "https://sandpack-bundler.codesandbox.io",
+        bundlerURL: "http://147.93.111.242:3000",
         autorun: true,
         autoReload: true,
         recompileMode: "immediate",
