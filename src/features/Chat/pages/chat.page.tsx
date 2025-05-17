@@ -514,8 +514,10 @@ INSTRUCTIONS:
       template="react"
       files={files}
       options={{
+        bundlerURL: "https://sandpack-bundler.codesandbox.io",
         autorun: true,
         autoReload: true,
+        recompileMode: "immediate",
         externalResources: ["https://cdn.tailwindcss.com"]
       }}
     >
