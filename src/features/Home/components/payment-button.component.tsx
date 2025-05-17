@@ -16,7 +16,7 @@ export const PaymentButton = ({
   const { user } = useUser();
 
   const handlePayment = () => {
-    fetch("http://localhost:5000/api/order/create", {
+    fetch("http://147.93.111.242:5000/api/order/create", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -47,7 +47,7 @@ export const PaymentButton = ({
           theme: {
             color: "#F37254"
           },
-          callback_url: "http://localhost:5000/api/order/verify"
+          callback_url: "http://147.93.111.242:5000/api/order/verify"
         };
 
         const razorpayInstance = new Razorpay(options);

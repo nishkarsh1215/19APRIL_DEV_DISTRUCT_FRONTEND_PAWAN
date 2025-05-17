@@ -10,9 +10,12 @@ export function useUser() {
   useEffect(() => {
     async function fetchUser() {
       try {
-        const { data } = await axios.get(`http://localhost:5000/api/auth/me`, {
-          withCredentials: true
-        });
+        const { data } = await axios.get(
+          `http://147.93.111.242:5000/api/auth/me`,
+          {
+            withCredentials: true
+          }
+        );
         setUser(data);
         setIsAuthenticated(true);
       } catch {
