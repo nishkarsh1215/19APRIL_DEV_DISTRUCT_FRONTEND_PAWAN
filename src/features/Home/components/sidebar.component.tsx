@@ -131,7 +131,11 @@ export function AppSidebar() {
               </Link>
             )}
             <div className="flex items-center justify-between py-5 pr-5 mx-5">
-              {isExpanded && <img src="/logo.png" className="h-10 w-10" />}
+              {isExpanded && (
+                <Link to={"/"}>
+                  <img src="/logo.png" className="h-10 w-10" />
+                </Link>
+              )}
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300 hover:scale-110"
