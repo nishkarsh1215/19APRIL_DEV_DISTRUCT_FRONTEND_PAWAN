@@ -11,7 +11,7 @@ export function useUser() {
     async function fetchUser() {
       try {
         const { data } = await axios.get(
-          `http://147.93.111.242:5000/api/auth/me`,
+          `https://devdistruct.com/api/api/auth/me`,
           {
             withCredentials: true
           }

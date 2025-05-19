@@ -25,7 +25,7 @@ export const AuthPage = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch("http://147.93.111.242:5000/api/auth/login", {
+      const res = await fetch("https://devdistruct.com/api/api/auth/login", {
         method: "POST",
         credentials: "include", // Allow cookies
         headers: {
@@ -58,11 +58,11 @@ export const AuthPage = () => {
   };
 
   const continueWithGoogle = () => {
-    window.open("http://147.93.111.242:5000/api/auth/google", "_self");
+    window.open("https://devdistruct.com/api/api/auth/google", "_self");
   };
 
   const continueWithGithub = () => {
-    window.open("http://147.93.111.242:5000/api/auth/github", "_self");
+    window.open("https://devdistruct.com/api/api/auth/github", "_self");
   };
 
   return (

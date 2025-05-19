@@ -14,17 +14,17 @@ export const getGoogleAuth = () => {
 };
 
 export const logout = () => {
-  return axios.get(`http://147.93.111.242:5000/api/auth/logout`, {
+  return axios.get(`https://devdistruct.com/api/api/auth/logout`, {
     withCredentials: true
   });
 };
 
 export const login = (data: { email: string; password: string }) => {
-  return axios.post(`http://147.93.111.242:5000/api/auth/login`, data);
+  return axios.post(`https://devdistruct.com/api/api/auth/login`, data);
 };
 
 export const getMe = () => {
-  return axios.get(`http://147.93.111.242:5000/api/auth/me`, {
+  return axios.get(`https://devdistruct.com/api/api/auth/me`, {
     withCredentials: true
   });
 };
@@ -34,7 +34,7 @@ export const register = (data: {
   email: string;
   password: string;
 }) => {
-  return axios.post(`http://147.93.111.242:5000/api/auth/register`, data);
+  return axios.post(`https://devdistruct.com/api/api/auth/register`, data);
 };
 
 export const requestPasswordReset = (data: { email: string }) => {
@@ -55,12 +55,14 @@ export const resetPassword = (
 };
 
 export const verifyEmail = (token: string) => {
-  return axios.get(`http://147.93.111.242:5000/api/auth/verify-email/${token}`);
+  return axios.get(
+    `https://devdistruct.com/api/api/auth/verify-email/${token}`
+  );
 };
 
 export const resendVerification = (data: { email: string }) => {
   return axios.post(
-    `http://147.93.111.242:5000/api/auth/resend-verification`,
+    `https://devdistruct.com/api/api/auth/resend-verification`,
     data
   );
 };
@@ -96,7 +98,7 @@ export const createChat = async ({
   try {
     // Send the FormData as is
     return await axios.post(
-      "http://147.93.111.242:5000/api/chat/create",
+      "https://devdistruct.com/api/api/chat/create",
       formData,
       {
         withCredentials: true
@@ -111,7 +113,7 @@ export const createChat = async ({
     try {
       console.log("Falling back to simple JSON payload");
       return await axios.post(
-        "http://147.93.111.242:5000/api/chat/create",
+        "https://devdistruct.com/api/api/chat/create",
         { title, prompt },
         { withCredentials: true }
       );
@@ -136,11 +138,11 @@ export const sendMessage = (data: {
     if (data.chat_id) formData.append("chat_id", data.chat_id);
     formData.append("prompt", data.prompt);
     formData.append("image", data.image);
-    return axios.post("http://147.93.111.242:5000/api/chat/send", formData, {
+    return axios.post("https://devdistruct.com/api/api/chat/send", formData, {
       withCredentials: true
     });
   }
-  return axios.post("http://147.93.111.242:5000/api/chat/send", data, {
+  return axios.post("https://devdistruct.com/api/api/chat/send", data, {
     withCredentials: true
   });
 };
@@ -187,7 +189,7 @@ export const sendCodeMessage = async ({
   try {
     console.log("Sending code message to API...");
     const response = await axios.post(
-      "http://147.93.111.242:5000/api/chat/send-code",
+      "https://devdistruct.com/api/api/chat/send-code",
       formData,
       {
         withCredentials: true
@@ -205,7 +207,7 @@ export const sendCodeMessage = async ({
     if (error?.message?.includes("FormData")) {
       console.log("Falling back to JSON request");
       return axios.post(
-        "http://147.93.111.242:5000/api/chat/send-code",
+        "https://devdistruct.com/api/api/chat/send-code",
         { chat_id: chat_id || "", prompt: enhancedPrompt },
         { withCredentials: true }
       );
@@ -217,13 +219,13 @@ export const sendCodeMessage = async ({
 };
 
 export const getChats = () => {
-  return axios.get("http://147.93.111.242:5000/api/chat/history", {
+  return axios.get("https://devdistruct.com/api/api/chat/history", {
     withCredentials: true
   });
 };
 
 export const getChat = (chat_id: string) => {
-  return axios.get(`http://147.93.111.242:5000/api/chat/${chat_id}`, {
+  return axios.get(`https://devdistruct.com/api/api/chat/${chat_id}`, {
     withCredentials: true,
     params: {
       include_messages: true, // Request to include messages in the response
@@ -234,25 +236,25 @@ export const getChat = (chat_id: string) => {
 };
 
 export const updateChat = (chat_id: string, title: string) => {
-  return axios.patch(`http://147.93.111.242:5000/api/chat/${chat_id}`, {
+  return axios.patch(`https://devdistruct.com/api/api/chat/${chat_id}`, {
     title
   });
 };
 
 export const deleteChat = (chat_id: string) => {
-  return axios.delete(`http://147.93.111.242:5000/api/chat/${chat_id}`, {
+  return axios.delete(`https://devdistruct.com/api/api/chat/${chat_id}`, {
     withCredentials: true
   });
 };
 
 export const getMessages = (chat_id: string) => {
-  return axios.get(`http://147.93.111.242:5000/api/chat/${chat_id}/messages`, {
+  return axios.get(`https://devdistruct.com/api/api/chat/${chat_id}/messages`, {
     withCredentials: true
   });
 };
 
 export const uploadImage = (data: { image: string; mime_type: string }) => {
-  return axios.post(`http://147.93.111.242:5000/api/chat/upload_image`, data, {
+  return axios.post(`https://devdistruct.com/api/api/chat/upload_image`, data, {
     withCredentials: true,
     headers: { "Content-Type": "application/json" } // explicitly set JSON header for compatibility
   });
@@ -260,14 +262,14 @@ export const uploadImage = (data: { image: string; mime_type: string }) => {
 
 // New: Fetch the chat to retrieve its associated editor
 export const getEditorForChat = (chat_id: string) => {
-  return axios.get(`http://147.93.111.242:5000/api/chat/${chat_id}`, {
+  return axios.get(`https://devdistruct.com/api/api/chat/${chat_id}`, {
     withCredentials: true
   });
 };
 
 // New: Fetch files associated with an editor using its id
 export const getFilesForEditor = (editor_id: string) => {
-  return axios.get("http://147.93.111.242:5000/api/files", {
+  return axios.get("https://devdistruct.com/api/api/files", {
     params: { editor_id },
     withCredentials: true
   });
@@ -277,7 +279,7 @@ export const getFilesForEditor = (editor_id: string) => {
 
 export const getFiles = (params: { chat_id?: string }) => {
   return axios.get(
-    `http://147.93.111.242:5000/api/files/${params.chat_id}/files`,
+    `https://devdistruct.com/api/api/files/${params.chat_id}/files`,
     {
       withCredentials: true
     }
@@ -289,12 +291,12 @@ export const createFile = (data: {
   code?: string;
   chat_id?: string;
 }) => {
-  const url = `http://147.93.111.242:5000/api/files`;
+  const url = `https://devdistruct.com/api/api/files`;
   return axios.post(url, data, { withCredentials: true });
 };
 
 export const getFile = (file_id: string, chat_id?: string) => {
-  let url = `http://147.93.111.242:5000/api/files/${file_id}`;
+  let url = `https://devdistruct.com/api/api/files/${file_id}`;
   if (chat_id) url += `?chat_id=${chat_id}`;
   return axios.get(url, { withCredentials: true });
 };
@@ -303,18 +305,18 @@ export const updateFile = (
   file_id: string,
   data: { name: string; code?: string }
 ) => {
-  const url = `http://147.93.111.242:5000/api/files/${file_id}`;
+  const url = `https://devdistruct.com/api/api/files/${file_id}`;
   return axios.put(url, data, { withCredentials: true });
 };
 
 export const deleteFile = (file_id: string) => {
-  const url = `http://147.93.111.242:5000/api/files/${file_id}`;
+  const url = `https://devdistruct.com/api/api/files/${file_id}`;
   return axios.delete(url, { withCredentials: true });
 };
 
 export const updateEditorMessage = (chat_id: string, data: string) => {
   return axios.patch(
-    `http://147.93.111.242:5000/api/chat/${chat_id}/editor_message`,
+    `https://devdistruct.com/api/api/chat/${chat_id}/editor_message`,
     data,
     {
       withCredentials: true,
@@ -327,7 +329,7 @@ export const updateEditorMessage = (chat_id: string, data: string) => {
 
 export const sendFeedback = (feedback: string) => {
   return axios.post(
-    "http://147.93.111.242:5000/api/chat/feedback",
+    "https://devdistruct.com/api/api/chat/feedback",
     { feedback },
     {
       withCredentials: true
