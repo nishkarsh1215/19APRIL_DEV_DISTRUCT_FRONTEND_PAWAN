@@ -514,7 +514,7 @@ INSTRUCTIONS:
       template="react"
       files={files}
       options={{
-        bundlerURL: "http://147.93.111.242:3000",
+        bundlerURL: "https://devdistruct.com",
         autorun: true,
         autoReload: true,
         recompileMode: "immediate",
